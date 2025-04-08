@@ -9,18 +9,20 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:webrtc_group_chat/models/message.dart';
+import 'package:webrtc_group_chat/models/room.dart';
 import 'package:webrtc_group_chat/providers/rtc_provider.dart';
 
 import '../models/peer.dart';
 
 class SignalingProvider with ChangeNotifier {
   final String _serverUrl = 'ws://192.168.200.120:18080'; // Replace with your signaling server address
-  dynamic _socket;
+  dynamic _socket = null;
   String? _myId;
   String? _myName;
   String? _currentRoomId;
   final List<Peer> _peers = [];
   bool _isConnected = false;
+  final List<Room> _rooms = [];
   
 
   final config = {
@@ -38,6 +40,8 @@ class SignalingProvider with ChangeNotifier {
   String? get currentRoomId => _currentRoomId;
   List<Peer> get peers => _peers;
   bool get isConnected => _isConnected;
+  List<Room> get rooms => _rooms;
+  
 
   BuildContext? _context;
 
@@ -46,11 +50,53 @@ class SignalingProvider with ChangeNotifier {
     _context = context;
   }
 
+  // 获取房间列表
+  Future<void> getRoomList() async {
+    if (_socket == null) {
+      _socket = await WebSocket.connect(_serverUrl);
+      // Listen for messages
+      _socket.listen((data) {
+        // Handle incoming data
+        _handleSignalingMessage(data);
+      }, onDone: () {
+        print('Connection closed');
+        _isConnected = false;
+        notifyListeners();
+      }, onError: (error) {
+        print('Error: $error');
+      });
+    }
+    if (_socket!.readyState == WebSocket.open) {
+      // 发送listRoom消息
+      notifyListeners();
+      _socket!.add(jsonEncode({
+        'type': 'listRoom',
+      }));
+    }
+  }
+
   // 连接到信令服务器
   Future<void> connect(String name) async {
     _myId = const Uuid().v4();
     _myName = name;
-    _socket = await WebSocket.connect(_serverUrl);
+    
+    if (_socket == null) {
+      _socket = await WebSocket.connect(_serverUrl);
+
+        // Listen for messages
+      _socket.listen((data) {
+        // Handle incoming data
+        _handleSignalingMessage(data);
+      }, onDone: () {
+        print('Connection closed');
+        _isConnected = false;
+        notifyListeners();
+      }, onError: (error) {
+        print('Error: $error');
+      });
+    }
+    
+
 
     // 验证连接是否成功
     if (_socket!.readyState == WebSocket.open) {
@@ -68,17 +114,7 @@ class SignalingProvider with ChangeNotifier {
       print("WebSocket failed to connect.");
     }
 
-    // Listen for messages
-    _socket.listen((data) {
-      // Handle incoming data
-       _handleSignalingMessage(data);
-    }, onDone: () {
-      print('Connection closed');
-       _isConnected = false;
-      notifyListeners();
-    }, onError: (error) {
-      print('Error: $error');
-    });
+   
   }
 
   // 处理信令消息
@@ -90,6 +126,9 @@ class SignalingProvider with ChangeNotifier {
       case 'roomCreated':
         _currentRoomId = data['roomId'];
         notifyListeners();
+        break;
+      case 'listRoom':        
+        _handelListRoom(data);
         break;
       case 'peerJoined':
         _handlePeerJoined(data);
@@ -132,6 +171,13 @@ class SignalingProvider with ChangeNotifier {
     }));
     _currentRoomId = roomId;
     notifyListeners();
+  }
+
+  Future<void> _handelListRoom(Map<String, dynamic> data) async {
+      final roomList = data['rooms'];
+      roomList.map((room)=>{
+        _rooms.add(Room(id: room.roomId, name: room.name, peerIds: []))
+      });
   }
 
   // 处理peer加入

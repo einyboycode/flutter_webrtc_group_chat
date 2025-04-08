@@ -15,6 +15,20 @@ class _JoinScreenState extends State<JoinScreen> {
   final _roomController = TextEditingController();
   bool _isCreatingRoom = false;
 
+  final FocusNode _focusNode = FocusNode();
+  List<String> _filteredOptions = [];
+  bool _showDropdown = false;
+  
+  final List<String> _options = [
+    'Apple',
+    'Banana',
+    'Cherry',
+    'Dragon Fruit',
+    'Grapes',
+    'Orange',
+  ];
+
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -25,6 +39,7 @@ class _JoinScreenState extends State<JoinScreen> {
   @override
   Widget build(BuildContext context) {
     final signaling = Provider.of<SignalingProvider>(context);
+    
 
     return Scaffold(
       appBar: AppBar(
@@ -50,8 +65,13 @@ class _JoinScreenState extends State<JoinScreen> {
             if (!_isCreatingRoom)
               TextField(
                 controller: _roomController,
+                onTap: () {
+                  signaling.getRoomList();
+                  print("文本框被点击了！");
+                  // 可以在这里执行一些操作，比如弹出键盘、显示对话框等
+                },
                 decoration: const InputDecoration(
-                  labelText: '房间ID',
+                  labelText: '群ID',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -66,7 +86,7 @@ class _JoinScreenState extends State<JoinScreen> {
                     Navigator.pushNamed(context, '/chat');
                   }
                 },
-                child: const Text('加入房间'),
+                child: const Text('加入群'),
               ),
             const SizedBox(height: 10),
             TextButton(
@@ -75,18 +95,18 @@ class _JoinScreenState extends State<JoinScreen> {
                   _isCreatingRoom = !_isCreatingRoom;
                 });
               },
-              child: Text(_isCreatingRoom ? '已有房间？加入' : '创建新房间'),
+              child: Text(_isCreatingRoom ? '已有群？加入' : '创建新群'),
             ),
             if (_isCreatingRoom)
               ElevatedButton(
                 onPressed: () async {
                   if (_nameController.text.isNotEmpty) {
                     await signaling.connect(_nameController.text);
-                    await signaling.createRoom('新房间');
+                    await signaling.createRoom('新群');
                     Navigator.pushNamed(context, '/chat');
                   }
                 },
-                child: const Text('创建房间'),
+                child: const Text('创建群'),
               ),
           ],
         ),

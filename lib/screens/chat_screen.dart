@@ -63,7 +63,7 @@ class _ChatScreenState extends State<ChatScreen> {
               SnackBar(content: Text('已复制: $text')),
             );
           },
-          child: Text('房间: ${signaling.currentRoomId}'),
+          child: Text('群房间号: ${signaling.currentRoomId}'),
         ),
         // leading: IconButton(
         //     icon: Icon(Icons.arrow_back),
