@@ -28,6 +28,7 @@ class RTCProvider with ChangeNotifier {
 
     // 获取下载目录
     final directory = await getDownloadPath();
+    print("====>保存文件:${directory.path}/${message.fileName}");
     final file = File('${directory.path}/${message.fileName}');
     
     try {

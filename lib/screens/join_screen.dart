@@ -32,6 +32,7 @@ class _JoinScreenState extends State<JoinScreen> {
   @override
   void initState() {
     super.initState(); // 必须调用父类方法
+    _roomController.text = "";
   }
 
   @override

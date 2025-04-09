@@ -7,7 +7,8 @@ plugins {
 
 android {
     namespace = "com.example.webrtc_group_chat"
-    compileSdk = flutter.compileSdkVersion
+    //compileSdk = flutter.compileSdkVersion
+    compileSdk 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -28,7 +29,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode 1
         versionName "1.0.0"
-        minSdkVersion 24
+        //minSdkVersion 24
     }
 
     buildTypes {

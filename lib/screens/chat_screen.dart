@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -26,26 +27,30 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     final rtc = Provider.of<RTCProvider>(context, listen: false);
     rtc.clearMessages();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToBottom();
-    });
+    rtc.addListener(_scrollToBottom);
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   _scrollToBottom();
+    // });
   }
 
   @override
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
+    Provider.of<RTCProvider>(context, listen: false).removeListener(_scrollToBottom);
     super.dispose();
   }
 
   void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
   @override
@@ -86,6 +91,11 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ],
       ),
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: _pickAndSendFile,
+      //   tooltip: '发送文件',
+      //   child: const Icon(Icons.attach_file),
+      // ),
       body: Column(
         children: [
           Expanded(
@@ -94,6 +104,9 @@ class _ChatScreenState extends State<ChatScreen> {
               itemCount: rtc.messages.length,
               itemBuilder: (context, index) {
                 final message = rtc.messages[index];
+                if (message.type == SendMessageType.file) {
+                  return _buildFileMessage(message);
+                }
                 return MessageBubble(
                   message: message,
                   isMe: message.isMe,
@@ -118,6 +131,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 IconButton(
                   icon: const Icon(Icons.send),
                   onPressed: _sendMessage,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.attach_file),
+                  onPressed: _pickAndSendFile,
                 ),
               ],
             ),
@@ -145,6 +162,150 @@ class _ChatScreenState extends State<ChatScreen> {
       signaling.sendMessage(_messageController.text);
       _messageController.clear();
       _scrollToBottom();
+    }
+  }
+
+  Widget _buildFileMessage(Message message) {
+    final fileSize = (message.fileSize! / 1024).toStringAsFixed(2);
+    
+    return Align(
+      alignment: message.isMe ? Alignment.centerRight : Alignment.centerLeft,
+      child: GestureDetector(
+        onTap: () => _saveFile(message),
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: message.isMe 
+                ? Theme.of(context).primaryColor 
+                : Colors.grey[300],
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: 
+                message.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            children: [
+              if (!message.isMe)
+                Text(
+                  message.senderId.substring(0, 8),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              Row(
+                children: [
+                  Icon(
+                    _getFileIcon(message.fileName!),
+                    color: message.isMe ? Colors.white : Colors.black,
+                  ),
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        message.fileName!,
+                        style: TextStyle(
+                          color: message.isMe ? Colors.white : Colors.black,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        '$fileSize KB',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: message.isMe ? Colors.white70 : Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Text(
+                '点击下载',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: message.isMe ? Colors.white70 : Colors.black54,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  IconData _getFileIcon(String fileName) {
+    final extension = fileName.split('.').last.toLowerCase();
+    
+    switch (extension) {
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+        return Icons.image;
+      case 'mp3':
+      case 'wav':
+        return Icons.audiotrack;
+      case 'mp4':
+      case 'avi':
+      case 'mov':
+        return Icons.videocam;
+      case 'doc':
+      case 'docx':
+        return Icons.description;
+      case 'xls':
+      case 'xlsx':
+        return Icons.table_chart;
+      case 'zip':
+      case 'rar':
+        return Icons.archive;
+      default:
+        return Icons.insert_drive_file;
+    }
+  }
+
+  Future<void> _pickAndSendFile() async {
+    final signaling = Provider.of<SignalingProvider>(context, listen: false);
+    
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: false,
+        type: FileType.any,
+      );
+      
+      if (result != null && result.files.single.path != null) {
+        final filePath = result.files.single.path!;
+        final fileName = result.files.single.name;
+        
+        await signaling.sendFile(filePath, fileName);
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('正在发送文件: $fileName')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('选择文件出错: $e')),
+      );
+    }
+  }
+
+  Future<void> _saveFile(Message message) async {
+    final rtc = Provider.of<RTCProvider>(context, listen: false);
+    
+    try {
+      await rtc.saveFile(message);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('文件已保存: ${message.fileName}')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('保存文件出错: $e')),
+      );
     }
   }
 }

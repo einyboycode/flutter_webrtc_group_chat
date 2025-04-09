@@ -22,6 +22,8 @@ class SignalingProvider with ChangeNotifier {
   final List<Peer> _peers = [];
   bool _isConnected = false;
   final List<Room> _rooms = [];
+  final Map<String, List<String>> _fileChunksMap = {};
+  final Map<String, dynamic> _fileMetasMap = {};
 
   final config = {
     'iceServers': [
@@ -148,7 +150,7 @@ class SignalingProvider with ChangeNotifier {
 
   // 创建房间
   Future<void> createRoom(String roomName) async {
-    _peers.add(Peer(id: _myId!, name: _myName! + "(self)"));
+    //_peers.add(Peer(id: _myId!, name: _myName! + "(self)"));
     _socket!.add(jsonEncode({
       'type': 'createRoom',
       'userId': _myId,
@@ -159,7 +161,7 @@ class SignalingProvider with ChangeNotifier {
 
   // 加入房间
   Future<void> joinRoom(String roomId) async {
-    _peers.add(Peer(id: _myId!, name: _myName! + "(self)"));
+    //_peers.add(Peer(id: _myId!, name: _myName! + "(self)"));
     _socket!.add(jsonEncode({
       'type': 'joinRoom',
       'userId': _myId,
@@ -343,10 +345,11 @@ class SignalingProvider with ChangeNotifier {
 
     channel.onMessage = (message) {
       final rtc = Provider.of<RTCProvider>(_context!, listen: false);
-      final Map<String, List<String>> fileChunksMap = {};
+      
 
       // 处理收到的消息
       final data = jsonDecode(message.text);
+      print("===========>data:$data");
       switch (data['type']) {
         case 'message':
           //data['isMe'] = false;
@@ -355,19 +358,22 @@ class SignalingProvider with ChangeNotifier {
         break;
         case 'fileMetadata':
         // 初始化文件接收
-        fileChunksMap[data['fileId']] = List.filled(data['totalChunks'], '');
+        _fileChunksMap[data['fileId']] = List.filled(data['totalChunks'], '');
+        _fileMetasMap[data['fileId']] = data;
         break;
         
       case 'fileChunk':
         // 存储文件块
-        fileChunksMap[data['fileId']]?[data['chunkIndex']] = data['data'];
+        _fileChunksMap[data['fileId']]?[data['chunkIndex']] = data['data'];
         
         // 检查是否所有块都已接收
-        final chunks = fileChunksMap[data['fileId']];
+        final chunks = _fileChunksMap[data['fileId']];
         if (chunks != null && !chunks.any((chunk) => chunk.isEmpty)) {
           // 所有块已接收，组合文件
+          
           final fileData = chunks.join();
-          final metadata = data; // 这里应该保存之前的元数据
+          final metadata = _fileMetasMap[data['fileId']]; // 这里应该保存之前的元数据
+          print('=====================>已接收文件:${metadata['fileName']}完成');
           
           rtc.addMessage(Message(
             id: metadata['fileId'],
@@ -383,30 +389,11 @@ class SignalingProvider with ChangeNotifier {
           ));
           
           // 清理
-          fileChunksMap.remove(data['fileId']);
+          _fileChunksMap.remove(data['fileId']);
+          _fileMetasMap.remove(data['fileId']);
         }
         break;
       }
-
-      // if (data['type'] == 'message') {
-      //   // 在这里处理消息
-      //   // 可以通知UI更新
-      //   final peerName = data['name'];
-      //   final content = data['content'];
-      //   final senderId = data['senderId'];
-      //   final timestamp = data['timestamp'];
-      //   print("$_myName接收到[$peerName]消息:$content 时间:$timestamp");
-      //   final rtc = Provider.of<RTCProvider>(_context!, listen: false);
-      //   final message = Message(
-      //       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      //       senderId: senderId!,
-      //       content: content,
-      //       timestamp: DateTime.parse(timestamp),
-      //       isMe: false,
-      //       name: peerName);
-      //   rtc.addMessage(message);
-      //   notifyListeners();
-      // }
     };
   }
 
@@ -470,8 +457,9 @@ class SignalingProvider with ChangeNotifier {
     };
 
     for (final peer in _peers) {
-      if (peer.id == _myId) continue;
+      //if (peer.id == _myId) continue;
       if (peer.dataChannel?.state == RTCDataChannelState.RTCDataChannelOpen) {
+        print("===========>发送文件 $fileName 给:${peer.name}");
         peer.dataChannel!.send(RTCDataChannelMessage(jsonEncode(metadata)));
       }
     }
@@ -485,6 +473,8 @@ class SignalingProvider with ChangeNotifier {
         end > base64Data.length ? base64Data.length : end,
       );
 
+     
+
       final chunkMessage = {
         'type': 'fileChunk',
         'name': _myName,
@@ -495,10 +485,12 @@ class SignalingProvider with ChangeNotifier {
       };
 
       for (final peer in _peers) {
-        if (peer.id == _myId) continue;
+        //if (peer.id == _myId) continue;
+        print("===========>发送文件 $fileName 数据片[$i]给:${peer.name}");
+        print("===========>通道状态：${peer.dataChannel?.state}");
         if (peer.dataChannel?.state == RTCDataChannelState.RTCDataChannelOpen) {
-          peer.dataChannel!
-              .send(RTCDataChannelMessage(jsonEncode(chunkMessage)));
+          print("===========>发送文件 $fileName 给:${peer.name}");
+          peer.dataChannel!.send(RTCDataChannelMessage(jsonEncode(chunkMessage)));
         }
       }
     }
