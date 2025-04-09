@@ -5,12 +5,17 @@ import 'providers/rtc_provider.dart';
 import 'providers/signaling_provider.dart';
 import 'screens/chat_screen.dart';
 import 'screens/join_screen.dart';
+import 'screens/setting.dart';
 
-void main() {
+void main() async {
+  final signaling = SignalingProvider();
+  await signaling.loadSavedSettings();
+  
+
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => SignalingProvider()),
+        ChangeNotifierProvider(create: (_) => signaling),
         ChangeNotifierProvider(create: (_) => RTCProvider()),
       ],
       child: const MyApp(),
@@ -33,6 +38,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) =>  JoinScreen(),
         '/chat': (context) => ChatScreen(),
+        '/settings': (context) => SettingsPage(),
       },
     );
   }

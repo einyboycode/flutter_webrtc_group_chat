@@ -187,7 +187,7 @@ class _ChatScreenState extends State<ChatScreen> {
             children: [
               if (!message.isMe)
                 Text(
-                  message.senderId.substring(0, 8),
+                  message.name,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Colors.black,

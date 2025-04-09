@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'package:webrtc_group_chat/models/message.dart';
 import 'package:webrtc_group_chat/models/room.dart';
@@ -13,8 +14,10 @@ import 'package:webrtc_group_chat/providers/rtc_provider.dart';
 import '../models/peer.dart';
 
 class SignalingProvider with ChangeNotifier {
-  final String _serverUrl =
-      'ws://192.168.200.120:18080'; // Replace with your signaling server address
+  String _serverUrl = 'ws://192.168.200.120:18080'; // 默认地址
+  
+  String get serverUrl => _serverUrl;
+
   dynamic _socket = null;
   String? _myId;
   String? _myName;
@@ -118,7 +121,7 @@ class SignalingProvider with ChangeNotifier {
   // 处理信令消息
   void _handleSignalingMessage(dynamic message) {
     final data = jsonDecode(message);
-    print("=========>data:$data");
+    //print("=========>data:$data");
     switch (data['type']) {
       case 'roomCreated':
         _currentRoomId = data['roomId'];
@@ -150,7 +153,7 @@ class SignalingProvider with ChangeNotifier {
 
   // 创建房间
   Future<void> createRoom(String roomName) async {
-    //_peers.add(Peer(id: _myId!, name: _myName! + "(self)"));
+    _peers.add(Peer(id: _myId!, name: _myName! + "(self)"));
     _socket!.add(jsonEncode({
       'type': 'createRoom',
       'userId': _myId,
@@ -161,7 +164,7 @@ class SignalingProvider with ChangeNotifier {
 
   // 加入房间
   Future<void> joinRoom(String roomId) async {
-    //_peers.add(Peer(id: _myId!, name: _myName! + "(self)"));
+    _peers.add(Peer(id: _myId!, name: _myName! + "(self)"));
     _socket!.add(jsonEncode({
       'type': 'joinRoom',
       'userId': _myId,
@@ -457,7 +460,7 @@ class SignalingProvider with ChangeNotifier {
     };
 
     for (final peer in _peers) {
-      //if (peer.id == _myId) continue;
+      if (peer.id == _myId) continue;
       if (peer.dataChannel?.state == RTCDataChannelState.RTCDataChannelOpen) {
         print("===========>发送文件 $fileName 给:${peer.name}");
         peer.dataChannel!.send(RTCDataChannelMessage(jsonEncode(metadata)));
@@ -485,7 +488,7 @@ class SignalingProvider with ChangeNotifier {
       };
 
       for (final peer in _peers) {
-        //if (peer.id == _myId) continue;
+        if (peer.id == _myId) continue;
         print("===========>发送文件 $fileName 数据片[$i]给:${peer.name}");
         print("===========>通道状态：${peer.dataChannel?.state}");
         if (peer.dataChannel?.state == RTCDataChannelState.RTCDataChannelOpen) {
@@ -502,6 +505,30 @@ class SignalingProvider with ChangeNotifier {
     _socket?.close();
     _isConnected = false;
     _myId = null;
+    notifyListeners();
+  }
+
+
+  void updateServerUrl(String newUrl) {
+    _serverUrl = newUrl;
+    notifyListeners();
+    
+    // 可选：持久化存储
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setString('signaling_server_url', newUrl);
+    });
+    
+    // // 如果已连接则重新连接
+    // if (_isConnected) {
+    //   disconnect();
+    //   connect();
+    // }
+  }
+  
+  // 初始化时加载保存的地址
+  Future<void> loadSavedSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    _serverUrl = prefs.getString('signaling_server_url') ?? _serverUrl;
     notifyListeners();
   }
 }
