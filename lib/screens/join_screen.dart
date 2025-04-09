@@ -63,7 +63,36 @@ class _JoinScreenState extends State<JoinScreen> {
             ),
             const SizedBox(height: 20),
             if (!_isCreatingRoom)
-              TextField(
+              // Autocomplete<String>(
+              //   optionsBuilder: (TextEditingValue textEditingValue) {
+              //     if (textEditingValue.text.isEmpty) {
+              //       return const Iterable<String>.empty();
+              //     }
+              //     return _options.where((option) =>
+              //     option.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+              //   },
+              //   onSelected: (String selection) {
+              //     print("选择了: $selection");
+              //   }, 
+              //   fieldViewBuilder: (
+              //     BuildContext context,
+              //     TextEditingController _roomController,
+              //     FocusNode focusNode,
+              //     VoidCallback onFieldSubmitted,
+              //   ){
+              //     return TextField(
+              //       controller: _roomController,
+              //       onTap: () {
+              //         signaling.getRoomList();
+              //       },
+              //       decoration: const InputDecoration(
+              //         labelText: '群ID',
+              //         border: OutlineInputBorder(),
+              //       ),
+              //     );
+              //   },
+              // ),
+            TextField(
                 controller: _roomController,
                 onTap: () {
                   signaling.getRoomList();
@@ -74,7 +103,7 @@ class _JoinScreenState extends State<JoinScreen> {
                   labelText: '群ID',
                   border: OutlineInputBorder(),
                 ),
-              ),
+            ),
             const SizedBox(height: 20),
             if (!_isCreatingRoom)
               ElevatedButton(
