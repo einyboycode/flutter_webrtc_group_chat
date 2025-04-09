@@ -1,6 +1,6 @@
 # download and install
 
-
+This is a group chat app and a group file-sharing app developed based on WebRTC using the Flutter language. It can run on Android phones and iOS devices. The project is open-source and follows the GPLv3 license. 
 
 git clone https://github.com/einyboycode/flutter_webrtc_group_chat.git
 
