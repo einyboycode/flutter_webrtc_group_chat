@@ -8,14 +8,14 @@ import 'screens/join_screen.dart';
 import 'screens/setting.dart';
 
 void main() async {
-  final signaling = SignalingProvider();
-  await signaling.loadSavedSettings();
+  //final signaling = SignalingProvider();
+  //await signaling.loadSavedSettings();
   
 
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => signaling),
+        ChangeNotifierProvider(create: (_) => SignalingProvider()),
         ChangeNotifierProvider(create: (_) => RTCProvider()),
       ],
       child: const MyApp(),

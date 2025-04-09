@@ -60,6 +60,7 @@ class _JoinScreenState extends State<JoinScreen> {
   @override
   Widget build(BuildContext context) {
     final signaling = Provider.of<SignalingProvider>(context);
+    signaling.loadSavedSettings();
     //signaling.getRoomList();
     // signaling.getRoomList().then((_) {
     //   _options.clear();
@@ -87,11 +88,15 @@ class _JoinScreenState extends State<JoinScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('加入群聊'),
-        // leading: IconButton(
-        //     icon: Icon(Icons.arrow_back),
-        //     onPressed: () => Navigator.pop(context), // 手动返回
-        // ),
+        title: const Text('欢迎使用webrtc群聊App'),
+        actions: [
+          // 添加设置图标按钮
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: '服务器设置',
+            onPressed: () => Navigator.pushNamed(context, '/settings'),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
