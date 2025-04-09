@@ -24,6 +24,8 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    final rtc = Provider.of<RTCProvider>(context, listen: false);
+    rtc.clearMessages();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToBottom();
     });
@@ -63,12 +65,15 @@ class _ChatScreenState extends State<ChatScreen> {
               SnackBar(content: Text('已复制: $text')),
             );
           },
-          child: Text('群房间号: ${signaling.currentRoomId}'),
+          child: Text('群号: ${signaling.currentRoomId}'),
         ),
-        // leading: IconButton(
-        //     icon: Icon(Icons.arrow_back),
-        //     onPressed: () => Navigator.pop(context), // 手动返回
-        // ),
+        leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: (){
+              signaling.leaveRoom();
+              Navigator.pop(context);// 手动返回
+            }
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.people),

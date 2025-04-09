@@ -41,6 +41,8 @@ class SignalingProvider with ChangeNotifier {
   List<Peer> get peers => _peers;
   bool get isConnected => _isConnected;
   List<Room> get rooms => _rooms;
+
+  Function()? onListRooms;
   
 
   BuildContext? _context;
@@ -52,6 +54,7 @@ class SignalingProvider with ChangeNotifier {
 
   // 获取房间列表
   Future<void> getRoomList() async {
+    _rooms.clear();
     if (_socket == null) {
       _socket = await WebSocket.connect(_serverUrl);
       // Listen for messages
@@ -153,6 +156,7 @@ class SignalingProvider with ChangeNotifier {
 
   // 创建房间
   Future<void> createRoom(String roomName) async {
+    _peers.add(Peer(id: _myId!, name: _myName!+"(self)"));
     _socket!.add(jsonEncode({
       'type': 'createRoom',
       'userId': _myId,
@@ -163,6 +167,7 @@ class SignalingProvider with ChangeNotifier {
 
   // 加入房间
   Future<void> joinRoom(String roomId) async {
+    _peers.add(Peer(id: _myId!, name: _myName!+"(self)"));
     _socket!.add(jsonEncode({
       'type': 'joinRoom',
       'userId': _myId,
@@ -174,10 +179,18 @@ class SignalingProvider with ChangeNotifier {
   }
 
   Future<void> _handelListRoom(Map<String, dynamic> data) async {
-      final roomList = data['rooms'];
-      roomList.map((room)=>{
-        _rooms.add(Room(id: room.roomId, name: room.name, peerIds: []))
-      });
+    final List<dynamic> roomList = data['rooms'];
+    //print("=========>roomList:${roomList}");
+    for (final room in roomList) {
+      //print("=========>room:$room");
+      _rooms.add(Room(
+          id: room['roomId'],
+          name: room['name'],
+          peerIds: [],
+        ));
+    }
+    print("=========>_rooms:$_rooms");
+    onListRooms?.call();
   }
 
   // 处理peer加入
