@@ -14,7 +14,7 @@ Run the command:
 Then execute:
 node ws_sgnal_server.js
 
-![0](.\image\0.png)
+![0](./image/0.png)
 
 
 
