@@ -1,11 +1,9 @@
 import 'dart:convert';
-import 'dart:ffi';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
+//import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:webrtc_group_chat/models/message.dart';
@@ -15,7 +13,8 @@ import 'package:webrtc_group_chat/providers/rtc_provider.dart';
 import '../models/peer.dart';
 
 class SignalingProvider with ChangeNotifier {
-  final String _serverUrl = 'ws://192.168.200.120:18080'; // Replace with your signaling server address
+  final String _serverUrl =
+      'ws://192.168.200.120:18080'; // Replace with your signaling server address
   dynamic _socket = null;
   String? _myId;
   String? _myName;
@@ -23,16 +22,15 @@ class SignalingProvider with ChangeNotifier {
   final List<Peer> _peers = [];
   bool _isConnected = false;
   final List<Room> _rooms = [];
-  
 
   final config = {
-      'iceServers': [
-        {'urls': 'stun:stun.l.google.com:19302'},
-        {'urls': 'stun:stun1.l.google.com:19302'},
-        {'urls': 'stun:stun2.l.google.com:19302'},
-        {'urls': 'stun:stun3.l.google.com:19302'},
-      ]
-    };
+    'iceServers': [
+      {'urls': 'stun:stun.l.google.com:19302'},
+      {'urls': 'stun:stun1.l.google.com:19302'},
+      {'urls': 'stun:stun2.l.google.com:19302'},
+      {'urls': 'stun:stun3.l.google.com:19302'},
+    ]
+  };
 
   // Getters
   String? get myId => _myId;
@@ -43,7 +41,6 @@ class SignalingProvider with ChangeNotifier {
   List<Room> get rooms => _rooms;
 
   Function()? onListRooms;
-  
 
   BuildContext? _context;
 
@@ -82,11 +79,11 @@ class SignalingProvider with ChangeNotifier {
   Future<void> connect(String name) async {
     _myId = const Uuid().v4();
     _myName = name;
-    
+
     if (_socket == null) {
       _socket = await WebSocket.connect(_serverUrl);
 
-        // Listen for messages
+      // Listen for messages
       _socket.listen((data) {
         // Handle incoming data
         _handleSignalingMessage(data);
@@ -98,8 +95,6 @@ class SignalingProvider with ChangeNotifier {
         print('Error: $error');
       });
     }
-    
-
 
     // 验证连接是否成功
     if (_socket!.readyState == WebSocket.open) {
@@ -116,13 +111,10 @@ class SignalingProvider with ChangeNotifier {
     } else {
       print("WebSocket failed to connect.");
     }
-
-   
   }
 
   // 处理信令消息
   void _handleSignalingMessage(dynamic message) {
-   
     final data = jsonDecode(message);
     print("=========>data:$data");
     switch (data['type']) {
@@ -130,7 +122,7 @@ class SignalingProvider with ChangeNotifier {
         _currentRoomId = data['roomId'];
         notifyListeners();
         break;
-      case 'listRoom':        
+      case 'listRoom':
         _handelListRoom(data);
         break;
       case 'peerJoined':
@@ -156,7 +148,7 @@ class SignalingProvider with ChangeNotifier {
 
   // 创建房间
   Future<void> createRoom(String roomName) async {
-    _peers.add(Peer(id: _myId!, name: _myName!+"(self)"));
+    _peers.add(Peer(id: _myId!, name: _myName! + "(self)"));
     _socket!.add(jsonEncode({
       'type': 'createRoom',
       'userId': _myId,
@@ -167,7 +159,7 @@ class SignalingProvider with ChangeNotifier {
 
   // 加入房间
   Future<void> joinRoom(String roomId) async {
-    _peers.add(Peer(id: _myId!, name: _myName!+"(self)"));
+    _peers.add(Peer(id: _myId!, name: _myName! + "(self)"));
     _socket!.add(jsonEncode({
       'type': 'joinRoom',
       'userId': _myId,
@@ -184,10 +176,10 @@ class SignalingProvider with ChangeNotifier {
     for (final room in roomList) {
       //print("=========>room:$room");
       _rooms.add(Room(
-          id: room['roomId'],
-          name: room['name'],
-          peerIds: [],
-        ));
+        id: room['roomId'],
+        name: room['name'],
+        peerIds: [],
+      ));
     }
     print("=========>_rooms:$_rooms");
     onListRooms?.call();
@@ -205,17 +197,16 @@ class SignalingProvider with ChangeNotifier {
     }
   }
 
-  void _handleJoinedRoom(Map<String, dynamic> data) {
-    
-  }
-  
+  void _handleJoinedRoom(Map<String, dynamic> data) {}
+
   // 初始化peer连接
   Future<void> _initiatePeerConnection(String peerId) async {
     final peer = _peers.firstWhere((p) => p.id == peerId);
     final pc = await createPeerConnection(config);
 
     // 创建数据通道
-    final dataChannel = await pc.createDataChannel('chat', RTCDataChannelInit());
+    final dataChannel =
+        await pc.createDataChannel('chat', RTCDataChannelInit());
     _setupDataChannel(dataChannel, peerId);
 
     peer.pc = pc;
@@ -260,7 +251,7 @@ class SignalingProvider with ChangeNotifier {
     }
 
     final peer = _peers.firstWhere((p) => p.id == peerId);
-    var pc =peer.pc;
+    var pc = peer.pc;
     pc ??= await createPeerConnection(config);
 
     pc.onDataChannel = (channel) {
@@ -322,7 +313,7 @@ class SignalingProvider with ChangeNotifier {
 
     if (!_peers.any((p) => p.id == peerId)) {
       // 这里可能需要从信令服务器获取peer的名字，或者使用默认值
-      _peers.add(Peer(id: peerId, name: peerName)); 
+      _peers.add(Peer(id: peerId, name: peerName));
       notifyListeners();
     }
 
@@ -351,29 +342,71 @@ class SignalingProvider with ChangeNotifier {
     };
 
     channel.onMessage = (message) {
+      final rtc = Provider.of<RTCProvider>(_context!, listen: false);
+      final Map<String, List<String>> fileChunksMap = {};
+
       // 处理收到的消息
       final data = jsonDecode(message.text);
-      if (data['type'] == 'message') {
-        // 在这里处理消息
-        // 可以通知UI更新        
-        final peerName = data['name'];
-        final content = data['content'];
-        final senderId = data['senderId'];
-        final timestamp  = data['timestamp'];
-        print("$_myName接收到[$peerName]消息:$content 时间:$timestamp");
-        final rtc = Provider.of<RTCProvider>(_context!, listen: false);
-        final message = Message(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          senderId: senderId!,
-          content: content,
-          timestamp: DateTime.parse(timestamp),
-          isMe: false,
-          name: peerName
-        );
-        rtc.addMessage(message);
-        notifyListeners();
+      switch (data['type']) {
+        case 'message':
+          //data['isMe'] = false;
+          rtc.addMessage(Message.fromJson(data, _myId!));
+          notifyListeners();
+        break;
+        case 'fileMetadata':
+        // 初始化文件接收
+        fileChunksMap[data['fileId']] = List.filled(data['totalChunks'], '');
+        break;
         
+      case 'fileChunk':
+        // 存储文件块
+        fileChunksMap[data['fileId']]?[data['chunkIndex']] = data['data'];
+        
+        // 检查是否所有块都已接收
+        final chunks = fileChunksMap[data['fileId']];
+        if (chunks != null && !chunks.any((chunk) => chunk.isEmpty)) {
+          // 所有块已接收，组合文件
+          final fileData = chunks.join();
+          final metadata = data; // 这里应该保存之前的元数据
+          
+          rtc.addMessage(Message(
+            id: metadata['fileId'],
+            senderId: metadata['senderId'],
+            content: '发送了文件: ${metadata['fileName']}',
+            timestamp: DateTime.parse(metadata['timestamp']),
+            isMe: metadata['senderId'] == _myId,
+            name: metadata['name'], 
+            type: SendMessageType.file,
+            fileName: metadata['fileName'],
+            fileSize: metadata['fileSize'],
+            fileData: fileData,
+          ));
+          
+          // 清理
+          fileChunksMap.remove(data['fileId']);
+        }
+        break;
       }
+
+      // if (data['type'] == 'message') {
+      //   // 在这里处理消息
+      //   // 可以通知UI更新
+      //   final peerName = data['name'];
+      //   final content = data['content'];
+      //   final senderId = data['senderId'];
+      //   final timestamp = data['timestamp'];
+      //   print("$_myName接收到[$peerName]消息:$content 时间:$timestamp");
+      //   final rtc = Provider.of<RTCProvider>(_context!, listen: false);
+      //   final message = Message(
+      //       id: DateTime.now().millisecondsSinceEpoch.toString(),
+      //       senderId: senderId!,
+      //       content: content,
+      //       timestamp: DateTime.parse(timestamp),
+      //       isMe: false,
+      //       name: peerName);
+      //   rtc.addMessage(message);
+      //   notifyListeners();
+      // }
     };
   }
 
@@ -410,6 +443,64 @@ class SignalingProvider with ChangeNotifier {
       _peers.clear();
       _currentRoomId = null;
       notifyListeners();
+    }
+  }
+
+  // 发送文件
+  Future<void> sendFile(String filePath, String fileName) async {
+    final file = File(filePath);
+    final fileSize = await file.length();
+    final bytes = await file.readAsBytes();
+    final base64Data = base64Encode(bytes);
+
+    // 将文件分块发送以避免数据通道大小限制
+    const chunkSize = 16 * 1024; // 16KB 每个块
+    final totalChunks = (base64Data.length / chunkSize).ceil();
+
+    // 发送文件元数据
+    final metadata = {
+      'type': 'fileMetadata',
+      'name': _myName,
+      'fileId': const Uuid().v4(),
+      'fileName': fileName,
+      'fileSize': fileSize,
+      'totalChunks': totalChunks,
+      'senderId': _myId,
+      'timestamp': DateTime.now().toIso8601String(),
+    };
+
+    for (final peer in _peers) {
+      if (peer.id == _myId) continue;
+      if (peer.dataChannel?.state == RTCDataChannelState.RTCDataChannelOpen) {
+        peer.dataChannel!.send(RTCDataChannelMessage(jsonEncode(metadata)));
+      }
+    }
+
+    // 发送文件数据块
+    for (var i = 0; i < totalChunks; i++) {
+      final start = i * chunkSize;
+      final end = (i + 1) * chunkSize;
+      final chunk = base64Data.substring(
+        start,
+        end > base64Data.length ? base64Data.length : end,
+      );
+
+      final chunkMessage = {
+        'type': 'fileChunk',
+        'name': _myName,
+        'fileId': metadata['fileId'],
+        'chunkIndex': i,
+        'totalChunks': totalChunks,
+        'data': chunk,
+      };
+
+      for (final peer in _peers) {
+        if (peer.id == _myId) continue;
+        if (peer.dataChannel?.state == RTCDataChannelState.RTCDataChannelOpen) {
+          peer.dataChannel!
+              .send(RTCDataChannelMessage(jsonEncode(chunkMessage)));
+        }
+      }
     }
   }
 

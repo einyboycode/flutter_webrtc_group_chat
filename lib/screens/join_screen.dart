@@ -99,6 +99,9 @@ class _JoinScreenState extends State<JoinScreen> {
           children: [
             TextField(
               controller: _nameController,
+              onTap: () async {
+                  await signaling.getRoomList();
+              },
               decoration: const InputDecoration(
                 labelText: '你的名字',
                 border: OutlineInputBorder(),
@@ -108,6 +111,7 @@ class _JoinScreenState extends State<JoinScreen> {
             if (_isCreatingRoom)
               TextField(
                 controller: _groupNameController,
+                
                 decoration: const InputDecoration(
                   labelText: '群名称:',
                   border: OutlineInputBorder(),
