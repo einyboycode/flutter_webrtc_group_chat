@@ -81,19 +81,19 @@ class _JoinScreenState extends State<JoinScreen> {
         for (final room in roomList) {
           final value = room.id;
           print('value:${value}');
-          _options.add('群号:' + value);
+          _options.add('group number:' + value);
         }
       });
     };
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('欢迎使用webrtc群聊App'),
+        title: const Text('Webrtc group chat App'),
         actions: [
           // 添加设置图标按钮
           IconButton(
             icon: const Icon(Icons.settings),
-            tooltip: '服务器设置',
+            tooltip: 'server url setting',
             onPressed: () => Navigator.pushNamed(context, '/settings'),
           ),
         ],
@@ -109,7 +109,7 @@ class _JoinScreenState extends State<JoinScreen> {
                   await signaling.getRoomList();
               },
               decoration: const InputDecoration(
-                labelText: '你的名字',
+                labelText: 'your name:',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -119,7 +119,7 @@ class _JoinScreenState extends State<JoinScreen> {
                 controller: _groupNameController,
                 
                 decoration: const InputDecoration(
-                  labelText: '群名称:',
+                  labelText: 'group number:',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -134,7 +134,7 @@ class _JoinScreenState extends State<JoinScreen> {
                   return _options;
                 },
                 onSelected: (String selection) {
-                  _roomController.text = selection.replaceAll("群号:", "");
+                  _roomController.text = selection.replaceAll("group number:", "");
                   print("选择了: ${_roomController.text}");
                 },
                 fieldViewBuilder: (
@@ -150,7 +150,7 @@ class _JoinScreenState extends State<JoinScreen> {
                       await signaling.getRoomList();
                     },
                     decoration: InputDecoration(
-                      labelText: "待加入群号:",
+                      labelText: "Group number to be joined:",
                       border: OutlineInputBorder(),
                     ),
                   );
@@ -179,12 +179,12 @@ class _JoinScreenState extends State<JoinScreen> {
                     Navigator.pushNamed(context, '/chat');
                   }else{
                     String message = "";
-                    if(_nameController.text.isEmpty) message = "你的名字不能为空";
-                    if(_roomController.text.isEmpty) message = "群号不能为空";
+                    if(_nameController.text.isEmpty) message = "Your name cannot be empty";
+                    if(_roomController.text.isEmpty) message = "Group number cannot be empty";
                     showTip(message);
                   }
                 },
-                child: const Text('加入群'),
+                child: const Text('Join group chat'),
               ),
             const SizedBox(height: 10),
             TextButton(
@@ -193,7 +193,7 @@ class _JoinScreenState extends State<JoinScreen> {
                   _isCreatingRoom = !_isCreatingRoom;
                 });
               },
-              child: Text(_isCreatingRoom ? '已有群？加入' : '创建新群'),
+              child: Text(_isCreatingRoom ? 'Already have a group? Join' : 'create group chat'),
             ),
             if (_isCreatingRoom)
               ElevatedButton(
@@ -201,18 +201,18 @@ class _JoinScreenState extends State<JoinScreen> {
                   if (_nameController.text.isNotEmpty) {
                     await signaling.connect(_nameController.text);
                     if (_groupNameController.text.isEmpty) {
-                      _groupNameController.text = "新群";
+                      _groupNameController.text = "new group";
                     }
                     await signaling.createRoom(_groupNameController.text);
-                    _groupNameController.text = "新群";
+                    _groupNameController.text = "new group";
                     Navigator.pushNamed(context, '/chat');
                   }else{
                     String message = "";
-                    if(_nameController.text.isEmpty) message = "你的名字不能为空";
+                    if(_nameController.text.isEmpty) message = "Your name cannot be empty";
                     showTip(message);
                   }
                 },
-                child: const Text('创建群'),
+                child: const Text('create group chat'),
               ),
           ],
         ),

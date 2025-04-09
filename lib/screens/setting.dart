@@ -45,24 +45,24 @@ class _SettingsPageState extends State<SettingsPage> {
               TextFormField(
                 controller: _serverUrlController,
                 decoration: InputDecoration(
-                  labelText: '信令服务器地址',
+                  labelText: 'signal server address:',
                   hintText: 'ws://your-server.com:8080',
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.link),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return '请输入服务器地址';
+                    return 'Please input signal server address';
                   }
                   if (!value.startsWith('ws://') && !value.startsWith('wss://')) {
-                    return '地址必须以 ws:// 或 wss:// 开头';
+                    return 'address format: ws://';
                   }
                   return null;
                 },
               ),
               SizedBox(height: 20),
               Text(
-                '示例地址:',
+                'example:',
                 style: TextStyle(color: Colors.grey),
               ),
               SizedBox(height: 8),
@@ -99,7 +99,7 @@ class _SettingsPageState extends State<SettingsPage> {
       signaling.updateServerUrl(_serverUrlController.text);
       
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('设置已保存')),
+        SnackBar(content: Text('Settings have been saved')),
       );
       
       Navigator.pop(context);

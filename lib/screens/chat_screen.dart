@@ -67,10 +67,10 @@ class _ChatScreenState extends State<ChatScreen> {
             final text = '${signaling.currentRoomId}';
             Clipboard.setData(ClipboardData(text: text));
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('已复制: $text')),
+              SnackBar(content: Text('already copy: $text')),
             );
           },
-          child: Text('群号: ${signaling.currentRoomId}'),
+          child: Text('group number: ${signaling.currentRoomId}'),
         ),
         leading: IconButton(
             icon: Icon(Icons.arrow_back),
@@ -122,7 +122,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: TextField(
                     controller: _messageController,
                     decoration: const InputDecoration(
-                      hintText: '输入消息...',
+                      hintText: 'input...',
                       border: OutlineInputBorder(),
                     ),
                     onSubmitted: (_) => _sendMessage(),
@@ -222,7 +222,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ],
               ),
               Text(
-                '点击下载',
+                'click download',
                 style: TextStyle(
                   fontSize: 10,
                   color: message.isMe ? Colors.white70 : Colors.black54,
@@ -283,12 +283,12 @@ class _ChatScreenState extends State<ChatScreen> {
         await signaling.sendFile(filePath, fileName);
         
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('正在发送文件: $fileName')),
+          SnackBar(content: Text('Sending file: $fileName')),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('选择文件出错: $e')),
+        SnackBar(content: Text('Error in selecting file: $e')),
       );
     }
   }
